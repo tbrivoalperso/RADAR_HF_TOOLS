@@ -8,3 +8,13 @@ This repository regroup :
   - [Maps of the correlation with the observations](https://github.com/tbrivoalperso/RADAR_HF_TOOLS/blob/master/PLOTS/MAP_U_correl_RADAR_HF_per_season.py)
   - [Taylor diagrams](https://github.com/tbrivoalperso/RADAR_HF_TOOLS/blob/master/PLOTS/RADAR_HF_taylor_diagram_comparaison.py)
   - [Current roses](https://github.com/tbrivoalperso/RADAR_HF_TOOLS/blob/master/PLOTS/RADAR_HF_currentrose_comparaison.py)
+
+
+
+### How to use the scripts
+
+For the scripts to work:
+- Make sure you have cdo installed, and the python libraries [skill_metrics](https://github.com/PeterRochford/SkillMetrics) (for the taylor diagrams) and [windrose](https://windrose.readthedocs.io/en/latest/install.html)
+- The HF RADAR files must be gridded in a lon/lat grid (or curvilinear grid) and their grid format must be compatible with cdo
+- To make sure the grid is well defined, type 'cdo sinfo gridfile_U.nc'. the 'Grid coordinates' must be 'lonlat' or 'curvilinear'
+
