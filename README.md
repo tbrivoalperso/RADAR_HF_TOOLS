@@ -33,6 +33,6 @@ For the scripts to work:
 - First, change paths in [rot_file.py](https://github.com/tbrivoalperso/RADAR_HF_TOOLS/blob/master/PRE_PROCESSING/rot_file.py) and use this script (`python rot_file.py`) to rotate U & V towards a regular North - South - East - West cartesian coordinate system
 - Then change paths in [remap_U.sh](https://github.com/tbrivoalperso/RADAR_HF_TOOLS/blob/master/PRE_PROCESSING/remap_U.sh) and [remap_V.sh](https://github.com/tbrivoalperso/RADAR_HF_TOOLS/blob/master/PRE_PROCESSING/remap_U.sh) and use these scripts (e.g : `./remap_U.sh`) to remap the model data towards the radar HF grids
 - At this point, in each radar folder, you will have a new folder created (with the name of the folder given by the variable EQUIVALENT_MODELE_DIR in remap_U.sh and remap_V.sh scripts with the remapped model files inside
-- Note that the remapped files are only remapped spatially. The temporal interpolation is made in each python scripts
+- Note that the remapped files are only remapped spatially. The temporal interpolation is made in each python scripts by the xarray interp function
 
  
