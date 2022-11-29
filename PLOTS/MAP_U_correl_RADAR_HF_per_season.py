@@ -16,7 +16,6 @@ import netCDF4 as nc
 from matplotlib import pyplot
 from matplotlib import colors as mcolors
 import matplotlib.gridspec as gridspec
-from scipy.stats import norm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
 cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["darkblue","blue","white","red","firebrick"])

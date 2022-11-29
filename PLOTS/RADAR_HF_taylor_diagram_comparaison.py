@@ -19,13 +19,8 @@ import pandas as pd
 from matplotlib import pyplot
 from matplotlib import colors as mcolors
 import matplotlib.gridspec as gridspec
-from scipy.stats import norm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy.stats import linregress
-from scipy import stats
 from numpy.polynomial.polynomial import polyfit
-from scipy.signal import wiener, filtfilt, butter, gaussian, freqz
-from scipy.ndimage import filters
 import skill_metrics as sm
 
 
