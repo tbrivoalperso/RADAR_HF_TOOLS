@@ -25,6 +25,8 @@ from windrose import WindroseAxes
 
 
 
+# Define radar name, name of the variables etc for each variable (1 radar = 1 column)
+
 list_radar=['BISC2','GIBR1', 'GALI2',  'EBRO', 'IROI', 'TIRLIG', 'TRAD3']
 list_var_u=['EWCT', 'u', 'u', 'u','u','EWCT', 'u']
 list_var_v=['NSCT', 'v', 'v',  'v' , 'v','NSCT', 'v']
@@ -32,6 +34,7 @@ list_time =['TIME', 'time', 'time', 'time',  'time','TIME','time']
 list_lat  =['LATITUDE', 'lat', 'lat', 'lat', 'latitude','LATITUDE', 'lat']
 list_lon  =['LONGITUDE', 'lon', 'lon', 'lon', 'longitude','LONGITUDE','lon']
 
+# iterate over radar name  
 
 for radar_num, radar in enumerate(list_radar):
 
@@ -42,6 +45,7 @@ for radar_num, radar in enumerate(list_radar):
     ax1.set_title('Zonal current (m/s)')
     ax2.set_title('Meridional current (m/s)')
 
+    # Read remapped model files & rename time / lon / lat with standard time / lon / lat name
     print(radar) 
     Ufile_AGRIF = xr.open_mfdataset('../DATA_RADAR/'+str(radar)+'/EQUIVALENT_MODELE/eNEATL36_1h_gridU_*') #, preprocess = apply_drop_duplicates)
     Vfile_AGRIF = xr.open_mfdataset('../DATA_RADAR/'+str(radar)+'/EQUIVALENT_MODELE/eNEATL36_1h_gridV_*') #, preprocess = apply_drop_duplicates)
@@ -62,10 +66,12 @@ for radar_num, radar in enumerate(list_radar):
     U_TWIN=Ufile_TWIN.sozocrtx.squeeze().sel(time_counter=slice('2017-06-01', '2018-06-01')).rename({'time_counter' : 'TIME'})
     V_TWIN=Vfile_TWIN.somecrty.squeeze().sel(time_counter=slice('2017-06-01', '2018-06-01')).rename({'time_counter' : 'TIME'})
 
+    # Read obs & rename time / lon / lat with standard time / lon / lat name
     U_OBS=file_OBS[list_var_u[radar_num]].rename({list_time[radar_num] : 'TIME'}).sel(TIME=slice('2017-06-01', '2018-06-01')) 
     V_OBS=file_OBS[list_var_v[radar_num]].rename({list_time[radar_num] : 'TIME'}).sel(TIME=slice('2017-06-01', '2018-06-01')) 
-    time_counter = pd.to_datetime(U_OBS.TIME.values.astype(str))
 
+    # Workaround to make a proper time axis for obs - Round to hour if hourly data, round to minute if higher frequency
+    time_counter = pd.to_datetime(U_OBS.TIME.values.astype(str))
     time_counter_round = time_counter.copy().round("H")
 
     TIME_reindex = pd.date_range(start=time_counter_round[0], end=time_counter_round[-1], freq='H')
@@ -90,6 +96,7 @@ for radar_num, radar in enumerate(list_radar):
         U_OBS = U_OBS.reindex(TIME=TIME_reindex, fill_value=np.nan)
         V_OBS = V_OBS.reindex(TIME=TIME_reindex, fill_value=np.nan)
 
+    # Temporal interpolation of the remapped model data + mask data            
     U_AGRIF_intp= U_AGRIF.interp(TIME=U_OBS['TIME']).where(~np.isnan(U_OBS),np.nan)
     V_AGRIF_intp= V_AGRIF.interp(TIME=V_OBS['TIME']).where(~np.isnan(V_OBS),np.nan)
 
@@ -101,6 +108,8 @@ for radar_num, radar in enumerate(list_radar):
 
     U_TWIN_intp=U_TWIN_intp.where(~np.isnan(V_AGRIF_intp),np.nan).where(~np.isnan(V_TWIN_intp),np.nan).where(~np.isnan(U_TWIN_intp),np.nan)
     V_TWIN_intp=V_TWIN_intp.where(~np.isnan(U_AGRIF_intp),np.nan).where(~np.isnan(U_TWIN_intp),np.nan).where(~np.isnan(V_AGRIF_intp),np.nan)
+
+    # mask data where there is less than 30% of the data valid over the time period
     count_U = np.count_nonzero(U_OBS.where(~np.isnan(U_OBS),0).values,axis=0)
     count_V = np.count_nonzero(V_OBS.where(~np.isnan(V_OBS),0).values,axis=0)
     U_AGRIF_intp = U_AGRIF_intp.where(count_U > int(len(U_AGRIF_intp[:,0,0])*0.3), np.nan)
@@ -110,13 +119,11 @@ for radar_num, radar in enumerate(list_radar):
     U_OBS = U_OBS.where(count_U > int(len(U_AGRIF_intp[:,0,0])*0.3), np.nan)
     V_OBS = V_OBS.where(count_V > int(len(U_AGRIF_intp[:,0,0])*0.3), np.nan)
 
-
+    # flatten data 
     U_AGRIF_intp_flat = U_AGRIF_intp.values.ravel()
     V_AGRIF_intp_flat = V_AGRIF_intp.values.ravel()
     U_TWIN_intp_flat = U_TWIN_intp.values.ravel()
     V_TWIN_intp_flat = V_TWIN_intp.values.ravel()
-
-
     U_OBS_flat = U_OBS.where(~np.isnan(U_AGRIF_intp),np.nan).values.ravel()
     V_OBS_flat = V_OBS.where(~np.isnan(V_AGRIF_intp),np.nan).values.ravel()
 

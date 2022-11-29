@@ -30,6 +30,8 @@ colors = np.vstack((darkblue,bwr_cmap1,w_cmap,bwr_cmap2,darkred))
 mymap =mcolors.LinearSegmentedColormap.from_list('my_colormap', colors)
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 
+# Define radar name, name of the variables etc for each variable (1 radar = 1 column)
+
 list_radar=['BISC2','GIBR1', 'GALI2',  'EBRO', 'IROI', 'TIRLIG', 'TRAD3']
 list_var_u=['EWCT', 'u', 'u', 'u','u','EWCT', 'u']
 list_var_v=['NSCT', 'v', 'v',  'v' , 'v','NSCT', 'v']
@@ -46,12 +48,8 @@ season_month_number =[[6, 7, 8], [9, 10, 11], [12, 1, 2], [3, 4, 5]]
 #axes.ylabels_right = False
 #axes.xlabels_top = False
 cnt=1
-def apply_drop_duplicates(obj):
-    data = obj
-    for dim in obj.dims: 
-        data = data.drop_duplicates(dim=dim)
-    return data 
 
+# iterate over radar name and over season 
 for radar_num, radar in enumerate(list_radar):
     try:
        for iseason in range(len(seasons)): 
@@ -76,7 +74,7 @@ for radar_num, radar in enumerate(list_radar):
            
  
             print(radar)    
-        
+            # Read domain_cfg.nc
             lon_lat = xr.open_dataset('/scratch/work/brivoalt/WORK_ANAMOD/TWIN/mesh_mask_eNEATL36_AGRIF108.nc', drop_variables={"x", "y",})
             lont = lon_lat['glamt'].squeeze()
             latt = lon_lat['gphit'].squeeze()
@@ -85,32 +83,39 @@ for radar_num, radar in enumerate(list_radar):
         
             angle = np.arctan2(((lont-lonv)*np.cos(np.radians(latv))),(latt - latv)) 
             print(np.min(angle))
+            
+            # Read remapped model files
             Ufile_AGRIF = xr.open_mfdataset('../DATA_RADAR/'+str(radar)+'/EQUIVALENT_MODELE/eNEATL36_1h_gridU_*') #, preprocess = apply_drop_duplicates)
             Vfile_AGRIF = xr.open_mfdataset('../DATA_RADAR/'+str(radar)+'/EQUIVALENT_MODELE/eNEATL36_1h_gridV_*') #, preprocess = apply_drop_duplicates)
             Ufile_TWIN = xr.open_mfdataset('../DATA_RADAR/'+str(radar)+'/EQUIVALENT_MODELE_TWIN/eNEATL36_1h_gridU_*') #, preprocess = apply_drop_duplicates)
             Vfile_TWIN = xr.open_mfdataset('../DATA_RADAR/'+str(radar)+'/EQUIVALENT_MODELE_TWIN/eNEATL36_1h_gridV_*') #, preprocess = apply_drop_duplicates)
         
+            # Rename longitudes / latitudes to standard lon / lat names
             Ufile_AGRIF = Ufile_AGRIF.rename({list_lon[radar_num] : 'LON'}).rename({list_lat[radar_num] : 'LAT'})
             Vfile_AGRIF = Vfile_AGRIF.rename({list_lon[radar_num] : 'LON'}).rename({list_lat[radar_num] : 'LAT'})
             Ufile_TWIN = Ufile_TWIN.rename({list_lon[radar_num] : 'LON'}).rename({list_lat[radar_num] : 'LAT'})
             Vfile_TWIN = Vfile_TWIN.rename({list_lon[radar_num] : 'LON'}).rename({list_lat[radar_num] : 'LAT'})
-        
+            
+            # Read OBS files
             file_OBS = xr.open_mfdataset('../DATA_RADAR/'+str(radar)+'/201?/*.nc') #, chunks={'time_counter': 50} )#, preprocess = apply_drop_duplicates)
             file_OBS = file_OBS.rename({list_lon[radar_num] : 'LON'}).rename({list_lat[radar_num] : 'LAT'}).squeeze()
+
+            # Rename time axes with standard time name
             U_AGRIF=Ufile_AGRIF.sozocrtx.squeeze().rename({'time_counter' : 'TIME'}) 
             V_AGRIF=Vfile_AGRIF.somecrty.squeeze().rename({'time_counter' : 'TIME'}) 
             U_TWIN=Ufile_TWIN.sozocrtx.squeeze().rename({'time_counter' : 'TIME'}) 
             V_TWIN=Vfile_TWIN.somecrty.squeeze().rename({'time_counter' : 'TIME'}) 
-        
             U_OBS=file_OBS[list_var_u[radar_num]].rename({list_time[radar_num] : 'TIME'}) 
             V_OBS=file_OBS[list_var_v[radar_num]].rename({list_time[radar_num] : 'TIME'}) 
+            # Select seasons 
             U_AGRIF=U_AGRIF.sel(TIME=U_AGRIF.TIME.dt.month.isin(season_month_number[iseason]))
             V_AGRIF=V_AGRIF.sel(TIME=V_AGRIF.TIME.dt.month.isin(season_month_number[iseason]))
             U_TWIN=U_TWIN.sel(TIME=U_TWIN.TIME.dt.month.isin(season_month_number[iseason]))
             V_TWIN=V_TWIN.sel(TIME=V_TWIN.TIME.dt.month.isin(season_month_number[iseason]))
             U_OBS=U_OBS.sel(TIME=U_OBS.TIME.dt.month.isin(season_month_number[iseason]))
             V_OBS=V_OBS.sel(TIME=V_OBS.TIME.dt.month.isin(season_month_number[iseason]))
-  
+    
+            # Workaround to make a proper time axis for obs - Round to hour if hourly data, round to minute if higher frequency
             time_counter = pd.to_datetime(U_OBS.TIME.values.astype(str))
             time_counter_round = time_counter.copy().round("H")
         
@@ -136,20 +141,14 @@ for radar_num, radar in enumerate(list_radar):
                 U_OBS = U_OBS.reindex(TIME=TIME_reindex, fill_value=np.nan)
                 V_OBS = V_OBS.reindex(TIME=TIME_reindex, fill_value=np.nan)
         
-            lat_tmp=file_OBS['LAT'].squeeze().values
-            lon_tmp=file_OBS['LON'].squeeze().values
-            lon, lat = np.meshgrid(lon_tmp,lat_tmp)
         
-            latmod_tmp=Ufile_AGRIF['LAT'].squeeze().values
-            lonmod_tmp=Ufile_AGRIF['LON'].squeeze().values
-            lonmod, latmod = np.meshgrid(lonmod_tmp,latmod_tmp)
-        
-            
+            # Temporal interpolation of the remapped model data + mask data            
             U_AGRIF_intp = U_AGRIF.interp(TIME=U_OBS['TIME']).where(~np.isnan(U_OBS),np.nan) #.where(LAT == file_OBS[list_lat[radar_num]])
             U_TWIN_intp = U_TWIN.interp(TIME=U_OBS['TIME']).where(~np.isnan(U_OBS),np.nan) #.where(LAT == file_OBS[list_lat[radar_num]])
             V_AGRIF_intp = V_AGRIF.interp(TIME=V_OBS['TIME']).where(~np.isnan(V_OBS),np.nan) #.where(LAT == file_OBS[list_lat[radar_num]])
             V_TWIN_intp = V_TWIN.interp(TIME=V_OBS['TIME']).where(~np.isnan(V_OBS),np.nan) #.where(LAT == file_OBS[list_lat[radar_num]])
 
+            # mask data where there is less than 30% of the data valid over the time period
             count_U = np.count_nonzero(U_OBS.where(~np.isnan(U_OBS),0).values,axis=0)
             count_V = np.count_nonzero(V_OBS.where(~np.isnan(V_OBS),0).values,axis=0)
             U_AGRIF_intp = U_AGRIF_intp.where(count_U > int(len(U_AGRIF_intp[:,0,0])*0.3), np.nan)
@@ -159,6 +158,7 @@ for radar_num, radar in enumerate(list_radar):
             U_OBS = U_OBS.where(count_U > int(len(U_AGRIF_intp[:,0,0])*0.3), np.nan)
             V_OBS = V_OBS.where(count_V > int(len(U_AGRIF_intp[:,0,0])*0.3), np.nan)
         
+            # NOW PLOT ################################################################################################################
             matplotlib.rcParams.update({'font.size': 10})
             print(lon.shape, U_AGRIF)
             var1 = np.nanmean(np.sqrt((U_AGRIF_intp - U_OBS)**2),axis=0)
