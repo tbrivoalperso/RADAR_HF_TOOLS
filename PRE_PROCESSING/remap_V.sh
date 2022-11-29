@@ -24,6 +24,8 @@
 DATADIR=/scratch/work/brivoalt/DATA/RADAR_HF/DATA_RADAR/ # Folder where the radar data is stored. They must be stored in 
 FLDR_in='/scratch/work/brivoalt/RUNS_NEMO/eNEATL36_AGRIF_vvl/EXP02_AGRIF_finaldomain_bathycorrected_qco_boost2_noslip/DATA_IMMERSE/NC4/'
 INDIR=/scratch/work/brivoalt/DATA/RADAR_HF/AGRIF_rot/ # Folder where nemo files are stored
+EQUIVALENT_MODELE_DIR=EQUIVALENT_MODELE # Name of the equivalent model folder to be created
+
 
 cd $INDIR
 pwd
@@ -68,7 +70,7 @@ do
 
    
    echo $grid_out
-   mkdir ${RADAR}/EQUIVALENT_MODELE
+   mkdir ${RADAR}/${EQUIVALENT_MODELE_DIR}
 
    for file in $list_grid_V   
    do
@@ -77,12 +79,12 @@ do
       echo "test"
    else
 
-       if [ -f ${RADAR}/EQUIVALENT_MODELE/${file} ]
+       if [ -f ${RADAR}/${EQUIVALENT_MODELE_DIR}/${file} ]
        then 
-       echo "${RADAR}/EQUIVALENT_MODELE/${file} DONE"
+       echo "${RADAR}/${EQUIVALENT_MODELE_DIR}/${file} DONE"
        else 
-#       echo cdo remapbil,gridfile_V_AGRIF.nc ${INDIR}/${file} ${RADAR}/EQUIVALENT_MODELE/${file} 
-       cdo remapbil,gridfile_V_AGRIF.nc ${INDIR}/${file} ${RADAR}/EQUIVALENT_MODELE/${file}
+#       echo cdo remapbil,gridfile_V_AGRIF.nc ${INDIR}/${file} ${RADAR}/${EQUIVALENT_MODELE_DIR}/${file} 
+       cdo remapbil,gridfile_V_AGRIF.nc ${INDIR}/${file} ${RADAR}/${EQUIVALENT_MODELE_DIR}/${file}
        fi
    fi
    done
